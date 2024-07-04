@@ -57,44 +57,38 @@ class Anchor_Header {
 	 * @return string          the content, updated if the content has H1-H6
 	 */
 	function the_content( $content ) {
+    if ( ! is_singular() || '' == $content ) {
+        return $content;
+    }
+    $anchors = array();
+    $doc = new DOMDocument();
+    $libxml_previous_state = libxml_use_internal_errors( true );
+    $doc->loadHTML( mb_convert_encoding( $content, 'HTML-ENTITIES', 'UTF-8' ) );
+    libxml_clear_errors();
+    libxml_use_internal_errors( $libxml_previous_state );
 
-		if ( ! is_singular() || '' == $content ) {
-			return $content;
-		}
-		$anchors = array();
-		$doc = new DOMDocument();
-		// START LibXML error management.
-		// Modify state
-		$libxml_previous_state = libxml_use_internal_errors( true );
-		$doc->loadHTML( mb_convert_encoding( $content, 'HTML-ENTITIES', 'UTF-8' ) );
-		$doc->loadHTML( mb_convert_encoding( $content, 'HTML-ENTITIES', 'UTF-8' ), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD );
-		// handle errors
-		libxml_clear_errors();
-		// restore
-		libxml_use_internal_errors( $libxml_previous_state );
-		// END LibXML error management.
+    foreach ( array( 'h1', 'h2', 'h3', 'h4', 'h5', 'h6' ) as $h ) {
+        $headings = $doc->getElementsByTagName( $h );
+        foreach ( $headings as $heading ) {
+            $a = $doc->createElement( 'a' );
+            $newnode = $heading->appendChild( $a );
+            $newnode->setAttribute( 'class', 'anchorlink dashicons-before' );
+            $textNodeValue = $heading->nodeValue;
+            // Ersetze ursprüngliche Bindestriche im Titel
+            $textNodeValue = str_replace('-', '', $textNodeValue); // Bindestriche aus dem Titel entfernen
+            $slug = $tmpslug = sanitize_title( $textNodeValue );
+            $i = 2;
+            while ( false !== in_array( $slug, $anchors ) ) {
+                $slug = sprintf( '%s-%d', $tmpslug, $i++ );
+            }
+            $anchors[] = $slug;
+            $heading->setAttribute( 'id', $slug );
+            $newnode->setAttribute( 'href', '#' . $slug );
+        }
+    }
+    return $doc->saveHTML();
+}
 
-		foreach ( array( 'h1', 'h2', 'h3', 'h4', 'h5', 'h6' ) as $h ) {
-			$headings = $doc->getElementsByTagName( $h );
-			foreach ( $headings as $heading ) {
-				$a = $doc->createElement( 'a' );
-				$newnode = $heading->appendChild( $a );
-				$newnode->setAttribute( 'class', 'anchorlink dashicons-before' );
-				// @codingStandardsIgnoreStart
-				// $heading->nodeValue is from an external libray. Ignore the standard check sinice it doesn't fit the WordPress-Core standard
-				$slug = $tmpslug = sanitize_title( $heading->nodeValue );
-				// @codingStandardsIgnoreEnd
-				$i = 2;
-				while ( false !== in_array( $slug, $anchors ) ) {
-					$slug = sprintf( '%s-%d', $tmpslug, $i++ );
-				}
-				$anchors[] = $slug;
-				$heading->setAttribute( 'id', $slug );
-				$newnode->setAttribute( 'href', '#' . $slug );
-			}
-		}
-		return $doc->saveHTML();
-	}
 
 	/**
 	 * Enable dashicons on the front-end
