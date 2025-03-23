@@ -81,10 +81,21 @@ class Anchor_Header {
 			// 1. Gedankenstrich (en dash / em dash) → Doppelminus
 			$textNodeValue = preg_replace( '/\s*[–—]\s*/u', '--', $textNodeValue );
 
-			// 2. Wortinterne Bindestriche entfernen: z. B. "Profi-Alternative" → "Profialternative"
+			// 2. Wortinterne Bindestriche entfernen
 			$textNodeValue = preg_replace( '/(?<=\w)-(?=\w)/', '', $textNodeValue );
 
-			// 3. Slugify ohne sanitize_title()
+			// 3. Umlaute ersetzen
+			$textNodeValue = strtr(
+			    $textNodeValue,
+			    array(
+			        'Ä' => 'Ae', 'ä' => 'ae',
+			        'Ö' => 'Oe', 'ö' => 'oe',
+			        'Ü' => 'Ue', 'ü' => 'ue',
+			        'ß' => 'ss',
+			    )
+			);
+
+			// 4. Slug bauen (ohne sanitize_title)
 			$slug = $tmpslug = strtolower( $textNodeValue );
 			$slug = remove_accents( $slug );
 			$slug = preg_replace( '/[^a-z0-9\-]+/', '-', $slug );
