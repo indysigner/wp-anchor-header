@@ -86,20 +86,26 @@ class Anchor_Header {
 
 			// 3. Umlaute ersetzen
 			$textNodeValue = strtr(
-			    $textNodeValue,
-			    array(
-			        'Ä' => 'Ae', 'ä' => 'ae',
-			        'Ö' => 'Oe', 'ö' => 'oe',
-			        'Ü' => 'Ue', 'ü' => 'ue',
-			        'ß' => 'ss',
-			    )
+				$textNodeValue,
+				array(
+					'Ä' => 'Ae', 'ä' => 'ae',
+					'Ö' => 'Oe', 'ö' => 'oe',
+					'Ü' => 'Ue', 'ü' => 'ue',
+					'ß' => 'ss',
+				)
 			);
 
-			// 4. Slug bauen (ohne sanitize_title)
+			// 4. & durch Bindestrich ersetzen
+			$textNodeValue = str_replace( '&', '-', $textNodeValue );
+
+			// 5. Slug bauen (manuell, nicht mit sanitize_title)
 			$slug = $tmpslug = strtolower( $textNodeValue );
 			$slug = remove_accents( $slug );
 			$slug = preg_replace( '/[^a-z0-9\-]+/', '-', $slug );
 			$slug = trim( $slug, '-' );
+
+			// 6. Dreifache Bindestriche verhindern
+			$slug = preg_replace( '/---+/', '--', $slug );
 
             $i = 2;
             while ( false !== in_array( $slug, $anchors ) ) {
